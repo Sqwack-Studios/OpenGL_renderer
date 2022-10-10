@@ -141,6 +141,10 @@ int main(void)
     if (!glfwInit())
         return -1;
 
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
+
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(1280, 720, "Hello World", NULL, NULL);
     if (!window)
@@ -177,12 +181,17 @@ int main(void)
         0, 1, 2,
         2, 3, 0
     };
+    unsigned int vao;
+    GLCall(glGenVertexArrays(1, &vao));
+    GLCall(glBindVertexArray(vao));
+    
+
 
     unsigned int buffer;
     //create the buffer
     GLCall(glGenBuffers(1, &buffer));
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
-    GLCall(glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), &positions, GL_STATIC_DRAW));
+    GLCall(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), &positions, GL_STATIC_DRAW));
 
     //create the layout for the buffer. Rembember that the buffer is binded
     GLCall(glEnableVertexAttribArray(0));
@@ -205,6 +214,11 @@ int main(void)
     int location = glGetUniformLocation(shader, "u_Color");
     GLCall(glUniform4f(location, 0.3f, 0.1f, 0.3f, 1.0f));
 
+    GLCall(glBindVertexArray(0));
+    GLCall(glUseProgram(0));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+
     float r{ 0.0f };
     float increment{ 0.05f };
 
@@ -213,6 +227,9 @@ int main(void)
     {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
+        
+        GLCall(glUseProgram(shader));
+        GLCall(glBindVertexArray(vao));
 
 
         GLCall(glUniform4f(location, r, 0.1f, 0.3f, 1.0f));
