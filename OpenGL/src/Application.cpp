@@ -19,12 +19,11 @@
 
 #include <glew.h>
 #include <glfw3.h>
+#include "Renderer.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
+#include "Display.h"
 
-#define ASSERT(x) if(!(x)) __debugbreak();
-
-#define GLCall(x) GLClearError();\
-    x;\
-    ASSERT(GLLogCall(#x, __FILE__,__LINE__))
 
 
 static void GLClearError()
@@ -135,7 +134,7 @@ static unsigned int CreateShader(const std::string& vertexShader, const std::str
 
 int main(void)
 {
-    GLFWwindow* window;
+
 
     /* Initialize the library */
     if (!glfwInit())
@@ -143,20 +142,22 @@ int main(void)
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_COMPAT_PROFILE);
+    
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(1280, 720, "Hello World", NULL, NULL);
-    if (!window)
+    Display display(1280, 720, std::string("Hello World"));
+    if (!display.SpawnWindow(NULL, NULL))
     {
-        glfwTerminate();
-        return -1;
+        std::cout << "Error creating display" << std::endl;
+        return 0;
     }
 
+    display.CreateContext();
+    display.SetSwapInterval(1);
+    
+   
 
-    /* Make the window's context current */
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
 
 
     if (glewInit() != GLEW_OK)
@@ -187,21 +188,19 @@ int main(void)
     
 
 
-    unsigned int buffer;
+
     //create the buffer
-    GLCall(glGenBuffers(1, &buffer));
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
-    GLCall(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), &positions, GL_STATIC_DRAW));
+    VertexBuffer vb(positions, 4 * 2 * sizeof(float));
+
 
     //create the layout for the buffer. Rembember that the buffer is binded
     GLCall(glEnableVertexAttribArray(0));
     GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0));
    
     //create index buffer
-    unsigned int ibo;
-    GLCall(glGenBuffers(1, &ibo));
-    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
-    GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW));
+    IndexBuffer ib(indices, 6);
+    
+    
 
     //ShaderProgramSource source = ParseShader("../../../OpenGL/res/shaders/Basic.shader");
     ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
@@ -223,7 +222,7 @@ int main(void)
     float increment{ 0.05f };
 
     /* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(window))
+    while (!display.ShouldCloseWindow())
     {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
@@ -243,14 +242,13 @@ int main(void)
             increment = 0.05f;
 
         /* Swap front and back buffers */
-        glfwSwapBuffers(window);
+        display.SwapBuffers();
 
         /* Poll for and process events */
         glfwPollEvents();
     }
 
     glDeleteProgram(shader);
-    glfwTerminate();
     return 0;
 }
 
